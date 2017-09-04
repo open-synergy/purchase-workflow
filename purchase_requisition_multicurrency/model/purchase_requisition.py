@@ -18,12 +18,18 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #
-from openerp import models, fields
+from openerp import models, fields, api
 from openerp.tools import SUPERUSER_ID
 
 
 class PurchaseRequisition(models.Model):
     _inherit = 'purchase.requisition'
+
+    @api.model
+    def _default_pricelist_id(self):
+        pricelist = self.env["ir.property"].get(
+            "property_product_pricelist_purchase", "res.partner")
+        return pricelist.id
 
     date_exchange_rate = fields.Date(
         'Exchange rate reference date',
@@ -32,6 +38,7 @@ class PurchaseRequisition(models.Model):
     pricelist_id = fields.Many2one(
         'product.pricelist',
         'Pricelist',
+        default=lambda self: self._default_pricelist_id(),
         required=True,
         help="Pricelist that represent the currency for current logistic "
              "request.")
