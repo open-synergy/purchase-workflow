@@ -2,7 +2,8 @@
 # © 2015 Eficent Business and IT Consulting Services S.L.
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
-from openerp import api, fields, models
+from openerp import api, fields, models, _
+from openerp.exceptions import Warning as UserError
 import openerp.addons.decimal_precision as dp
 
 _STATES = [
@@ -127,6 +128,15 @@ class PurchaseRequest(models.Model):
         return super(PurchaseRequest, self).create(vals)
 
     @api.multi
+    def unlink(self):
+        strWarning = _("You can only delete data on draft state")
+        for request in self:
+            if request.state != "draft":
+                raise UserError(strWarning)
+        _super = super(PurchaseRequest, self)
+        _super.unlink()
+
+    @api.multi
     def write(self, vals):
         self.ensure_one()
         if vals.get('assigned_to'):
@@ -237,6 +247,15 @@ class PurchaseRequestLine(models.Model):
     procurement_id = fields.Many2one('procurement.order',
                                      'Procurement Order',
                                      readonly=True)
+
+    @api.multi
+    def unlink(self):
+        strWarning = _("You can only delete data on draft state")
+        for line in self:
+            if line.request_id.state != "draft":
+                raise UserError(strWarning)
+        _super = super(PurchaseRequestLine, self)
+        _super.unlink()
 
     @api.onchange('product_id')
     def onchange_product_name(self):
